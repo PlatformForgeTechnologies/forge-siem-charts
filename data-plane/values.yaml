@@ -3,18 +3,17 @@
 # Deploy this chart in your own Kubernetes cluster after completing the
 # "Connect data plane" step in the Forge admin center for your tenant.
 #
-# Required: fill in every value under forge.* and dependencies.*
+# Required: forge.tenantID, forge.relayAPIKey, and all dependencies.*
 
 forge:
   # Tenant ID from the Forge admin center (Settings → Tenant)
   tenantID: ""
-  # The API key generated in Admin → Tenants → <your tenant> → Data Plane
-  # This is shown ONCE at generation time — store it in your secrets manager.
+  # API key generated in Admin → Tenants → <your tenant> → Data Plane → Generate Key
+  # Shown once at generation time — store it in your secrets manager.
   relayAPIKey: ""
-  # Public URL where the Forge SaaS can reach this relay.
-  # Must be reachable from api.platformforgegroup.com.
-  # Example: https://forge-relay.yourdomain.com
-  relayPublicURL: ""
+  # Optional: override the Forge control plane WebSocket URL.
+  # Leave empty to use the default (wss://api.platformforgegroup.com).
+  controlURL: ""
 
 image:
   registry: apanisile
@@ -39,19 +38,13 @@ dependencies:
     password: ""
 
 # ── Relay ──────────────────────────────────────────────────────────────────────
+# The relay dials OUT to Forge — it does not listen for inbound connections.
+# No LoadBalancer, no open ports, no firewall rules required.
 relay:
   replicas: 2
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits:   { cpu: 200m, memory: 128Mi }
-  service:
-    type: LoadBalancer  # or ClusterIP if you put a Gateway/Ingress in front
-    port: 8443
-  tls:
-    # Set enabled: true and provide a cert-manager issuer or existing TLS secret.
-    # The relay listens on plain HTTP by default — terminate TLS at the ingress.
-    enabled: false
-    secretName: ""
 
 # ── Data plane services ────────────────────────────────────────────────────────
 ingest:

@@ -62,13 +62,12 @@ helm install forge-data-plane forge-siem/forge-siem-data-plane \
   --namespace forge-byoc --create-namespace \
   --set forge.tenantID=<your-tenant-id> \
   --set forge.relayAPIKey=<fdp_key-from-portal> \
-  --set forge.relayPublicURL=https://relay.yourdomain.com \
   --set dependencies.postgres.dsn="postgres://user:pass@host:5432/forge_siem?sslmode=require" \
   --set dependencies.redis.addr="redis-host:6379" \
   --set dependencies.clickhouse.addr="ch-host:9000"
 ```
 
-After install, click **Ping** in the admin portal to confirm the relay is reachable. Your analysts will see data in the Forge dashboard within minutes of agents enrolling.
+The relay dials out to Forge over a persistent WebSocket on port 443 — no inbound ports, no LoadBalancer, no firewall rules required. Connection status appears automatically in the admin portal once the relay pod is running. Your analysts will see data in the Forge dashboard within minutes of agents enrolling.
 
 ### Services deployed
 
@@ -79,7 +78,7 @@ After install, click **Ping** in the admin portal to confirm the relay is reacha
 | `forge-raw-archiver` | — | Archives raw events to ClickHouse (+ S3 optional) |
 | `forge-rules-engine` | — | Evaluates detection rules, fires alerts |
 | `forge-alert-indexer` | — | Writes alerts to ClickHouse and PostgreSQL |
-| `forge-relay` | 8443 | Bridges Forge dashboard queries to your local data |
+| `forge-relay` | — | Dials out to Forge; bridges dashboard queries to your local data |
 
 See [`data-plane/values.yaml`](data-plane/values.yaml) for all options.
 
@@ -87,7 +86,7 @@ See [`data-plane/values.yaml`](data-plane/values.yaml) for all options.
 
 ## Security
 
-- The relay authenticates every inbound request with a `Bearer fdp_*` token. Rotate it any time in the admin portal.
+- The relay authenticates to Forge with a `Bearer fdp_*` token. Rotate it any time in the admin portal — the relay reconnects automatically with the new key.
 - All agent→ingest traffic uses mTLS (TLS 1.3).
 - No raw log content is ever transmitted to Forge infrastructure.
 

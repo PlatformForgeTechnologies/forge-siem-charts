@@ -16,12 +16,8 @@ spec:
         - name: relay
           image: {{ .Values.image.registry }}/forge-siem-relay:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: 8443
-              name: http
+          # The relay dials OUT to Forge — no ports exposed, no inbound connections.
           env:
-            - name: RELAY_LISTEN_ADDR
-              value: ":8443"
             - name: RELAY_TENANT_ID
               value: {{ .Values.forge.tenantID | quote }}
             - name: RELAY_API_KEY
@@ -29,6 +25,10 @@ spec:
                 secretKeyRef:
                   name: forge-byoc-secrets
                   key: relay-api-key
+            {{- if .Values.forge.controlURL }}
+            - name: RELAY_CONTROL_URL
+              value: {{ .Values.forge.controlURL | quote }}
+            {{- end }}
             - name: RELAY_PG_DSN
               valueFrom:
                 secretKeyRef:
@@ -51,54 +51,11 @@ spec:
                 secretKeyRef:
                   name: forge-byoc-secrets
                   key: clickhouse-pass
-            {{- if .Values.relay.tls.enabled }}
-            # TLS mode: HTTP/2 is negotiated automatically via ALPN.
-            # cert-manager mounts the certificate at the path below.
-            - name: RELAY_TLS_CERT
-              value: /tls/tls.crt
-            - name: RELAY_TLS_KEY
-              value: /tls/tls.key
-            {{- end }}
-          {{- if .Values.relay.tls.enabled }}
-          volumeMounts:
-            - name: tls
-              mountPath: /tls
-              readOnly: true
-          {{- end }}
-          # The liveness probe uses TCP (not HTTP) so it works regardless of TLS mode.
           livenessProbe:
-            tcpSocket:
-              port: 8443
-            initialDelaySeconds: 5
+            exec:
+              # Relay is healthy if the process is running; no HTTP port to probe.
+              command: ["sh", "-c", "kill -0 1"]
+            initialDelaySeconds: 10
             periodSeconds: 30
-          readinessProbe:
-            tcpSocket:
-              port: 8443
-            initialDelaySeconds: 3
-            periodSeconds: 10
           resources:
             {{- toYaml .Values.relay.resources | nindent 12 }}
-      {{- if .Values.relay.tls.enabled }}
-      volumes:
-        - name: tls
-          secret:
-            secretName: {{ .Values.relay.tls.secretName }}
-      {{- end }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: forge-relay
-  annotations:
-    # Hint for cloud load balancers that this is HTTP/2 (gRPC-compatible)
-    {{- if .Values.relay.tls.enabled }}
-    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
-    {{- end }}
-spec:
-  type: {{ .Values.relay.service.type }}
-  selector:
-    app: forge-relay
-  ports:
-    - port: {{ .Values.relay.service.port }}
-      targetPort: 8443
-      name: {{ if .Values.relay.tls.enabled }}https{{ else }}http{{ end }}
