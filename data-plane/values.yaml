@@ -1,0 +1,88 @@
+# Forge SIEM BYOC Data Plane — values.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+# Deploy this chart in your own Kubernetes cluster after completing the
+# "Connect data plane" step in the Forge admin center for your tenant.
+#
+# Required: fill in every value under forge.* and dependencies.*
+
+forge:
+  # Tenant ID from the Forge admin center (Settings → Tenant)
+  tenantID: ""
+  # The API key generated in Admin → Tenants → <your tenant> → Data Plane
+  # This is shown ONCE at generation time — store it in your secrets manager.
+  relayAPIKey: ""
+  # Public URL where the Forge SaaS can reach this relay.
+  # Must be reachable from api.platformforgegroup.com.
+  # Example: https://forge-relay.yourdomain.com
+  relayPublicURL: ""
+
+image:
+  registry: apanisile
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# ── External dependencies (you provide) ───────────────────────────────────────
+dependencies:
+  postgres:
+    # Full DSN for your PostgreSQL instance (RDS, Cloud SQL, Supabase, etc.)
+    dsn: "postgres://forge:password@your-rds-endpoint:5432/forge_siem?sslmode=require"
+  redis:
+    # Redis address (ElastiCache, Upstash, Redis Cloud, etc.)
+    addr: "your-redis-endpoint:6379"
+    password: ""
+    db: 0
+  clickhouse:
+    # ClickHouse endpoint (ClickHouse Cloud, Altinity, or self-hosted)
+    addr: "your-clickhouse-host:9000"
+    database: forge_siem
+    username: default
+    password: ""
+
+# ── Relay ──────────────────────────────────────────────────────────────────────
+relay:
+  replicas: 2
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 200m, memory: 128Mi }
+  service:
+    type: LoadBalancer  # or ClusterIP if you put a Gateway/Ingress in front
+    port: 8443
+  tls:
+    # Set enabled: true and provide a cert-manager issuer or existing TLS secret.
+    # The relay listens on plain HTTP by default — terminate TLS at the ingress.
+    enabled: false
+    secretName: ""
+
+# ── Data plane services ────────────────────────────────────────────────────────
+ingest:
+  replicas: 2
+  service:
+    type: LoadBalancer
+    port: 1514
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 256Mi }
+
+decoder:
+  replicas: 2
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 256Mi }
+
+rawArchiver:
+  replicas: 1
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 200m, memory: 128Mi }
+
+rulesEngine:
+  replicas: 2
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 256Mi }
+
+alertIndexer:
+  replicas: 1
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 200m, memory: 128Mi }

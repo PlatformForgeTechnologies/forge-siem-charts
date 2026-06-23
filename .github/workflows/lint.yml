@@ -1,0 +1,39 @@
+name: Helm lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart:
+          - name: agent
+            set: >-
+              --set enrollment.token=test-token
+              --set enrollment.groups[0]=ci
+          - name: data-plane
+            set: >-
+              --set forge.tenantID=test
+              --set forge.relayAPIKey=fdp_test
+              --set forge.relayPublicURL=https://relay.example.com
+              --set dependencies.postgres.dsn="postgres://u:p@host:5432/db"
+              --set dependencies.redis.addr="redis:6379"
+              --set dependencies.clickhouse.addr="ch:9000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Lint ${{ matrix.chart.name }}
+        run: helm lint ${{ matrix.chart.name }} ${{ matrix.chart.set }}
+
+      - name: Template render check — ${{ matrix.chart.name }}
+        run: helm template forge-test ${{ matrix.chart.name }} ${{ matrix.chart.set }} > /dev/null

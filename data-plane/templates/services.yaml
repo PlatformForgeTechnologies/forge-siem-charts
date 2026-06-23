@@ -1,0 +1,137 @@
+{{- $common := dict "Values" .Values "Release" .Release "Chart" .Chart -}}
+---
+# ── Ingest ────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-ingest
+spec:
+  replicas: {{ .Values.ingest.replicas }}
+  selector:
+    matchLabels:
+      app: forge-ingest
+  template:
+    metadata:
+      labels:
+        app: forge-ingest
+    spec:
+      containers:
+        - name: ingest
+          image: {{ .Values.image.registry }}/forge-siem-ingest:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 1514
+              name: mtls
+          env:
+            {{- include "byoc.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.ingest.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: forge-ingest
+spec:
+  type: {{ .Values.ingest.service.type }}
+  selector:
+    app: forge-ingest
+  ports:
+    - port: {{ .Values.ingest.service.port }}
+      targetPort: 1514
+      name: mtls
+---
+# ── Decoder ───────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-decoder
+spec:
+  replicas: {{ .Values.decoder.replicas }}
+  selector:
+    matchLabels:
+      app: forge-decoder
+  template:
+    metadata:
+      labels:
+        app: forge-decoder
+    spec:
+      containers:
+        - name: decoder
+          image: {{ .Values.image.registry }}/forge-siem-decoder:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "byoc.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.decoder.resources | nindent 12 }}
+---
+# ── Raw Archiver ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-raw-archiver
+spec:
+  replicas: {{ .Values.rawArchiver.replicas }}
+  selector:
+    matchLabels:
+      app: forge-raw-archiver
+  template:
+    metadata:
+      labels:
+        app: forge-raw-archiver
+    spec:
+      containers:
+        - name: raw-archiver
+          image: {{ .Values.image.registry }}/forge-siem-raw-archiver:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "byoc.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.rawArchiver.resources | nindent 12 }}
+---
+# ── Rules Engine ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-rules-engine
+spec:
+  replicas: {{ .Values.rulesEngine.replicas }}
+  selector:
+    matchLabels:
+      app: forge-rules-engine
+  template:
+    metadata:
+      labels:
+        app: forge-rules-engine
+    spec:
+      containers:
+        - name: rules-engine
+          image: {{ .Values.image.registry }}/forge-siem-rules-engine:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "byoc.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.rulesEngine.resources | nindent 12 }}
+---
+# ── Alert Indexer ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forge-alert-indexer
+spec:
+  replicas: {{ .Values.alertIndexer.replicas }}
+  selector:
+    matchLabels:
+      app: forge-alert-indexer
+  template:
+    metadata:
+      labels:
+        app: forge-alert-indexer
+    spec:
+      containers:
+        - name: alert-indexer
+          image: {{ .Values.image.registry }}/forge-siem-alert-indexer:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- include "byoc.commonEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.alertIndexer.resources | nindent 12 }}

@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: forge-siem-agent
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "agent.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+    {{- if eq .Values.updateStrategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "agent.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- if .Values.rbac.create }}
+      serviceAccountName: forge-siem-agent
+      {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      hostPID: true
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: agent
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ENROLL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forge-agent-enrollment
+                  key: enrollment-token
+            - name: API_URL
+              value: {{ .Values.enrollment.apiURL | quote }}
+            - name: INGEST_URL
+              value: {{ .Values.enrollment.ingestURL | quote }}
+            {{- if .Values.enrollment.groups }}
+            - name: AGENT_GROUPS
+              value: {{ include "agent.groups" . | quote }}
+            {{- end }}
+            # Tell the agent where the host's log root and proc are mounted
+            - name: LOG_DIR
+              value: /host/var/log
+            - name: PROC_ROOT
+              value: /host/proc
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.hostPaths.varLog.enabled }}
+            - name: host-var-log
+              mountPath: /host/var/log
+              readOnly: true
+            {{- end }}
+            {{- if .Values.hostPaths.proc.enabled }}
+            - name: host-proc
+              mountPath: /host/proc
+              readOnly: true
+            {{- end }}
+            {{- if .Values.hostPaths.containerSocket.enabled }}
+            - name: container-socket
+              mountPath: /run/containerd/containerd.sock
+            {{- end }}
+            # Agent certificate store — persisted so the agent survives pod restarts
+            # without re-enrolling on every node restart.
+            - name: agent-data
+              mountPath: /var/lib/forge-siem-agent
+      volumes:
+        {{- if .Values.hostPaths.varLog.enabled }}
+        - name: host-var-log
+          hostPath:
+            path: {{ .Values.hostPaths.varLog.hostPath }}
+            type: Directory
+        {{- end }}
+        {{- if .Values.hostPaths.proc.enabled }}
+        - name: host-proc
+          hostPath:
+            path: {{ .Values.hostPaths.proc.hostPath }}
+            type: Directory
+        {{- end }}
+        {{- if .Values.hostPaths.containerSocket.enabled }}
+        - name: container-socket
+          hostPath:
+            path: {{ .Values.hostPaths.containerSocket.hostPath }}
+            type: Socket
+        {{- end }}
+        # emptyDir per-node — agent certs survive pod restart on the same node
+        # but not node replacement (agent re-enrolls automatically on new nodes)
+        - name: agent-data
+          emptyDir: {}

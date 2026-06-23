@@ -1,0 +1,78 @@
+# Forge SIEM Agent — values.yaml
+# ──────────────────────────────────────────────────────────────────────────────
+# Deploy this chart in any Kubernetes cluster to run the Forge SIEM agent as a
+# DaemonSet. One pod per node: log collection, FIM, process monitoring, and
+# mTLS event shipping to the ingest endpoint.
+
+enrollment:
+  # Token from Forge dashboard → Agents → Enrollment Tokens → New Token
+  token: ""
+  # Forge API endpoint (control plane)
+  apiURL: "https://api.platformforgegroup.com"
+  # Forge ingest endpoint (mTLS TCP)
+  ingestURL: "ingest.platformforgegroup.com:1514"
+  # Optional: tag agents into groups (e.g. cluster name, environment)
+  # agents in a group share rules and show together in the Agents page
+  groups: []
+  # Example:
+  # groups:
+  #   - production
+  #   - eks-us-east-1
+
+image:
+  repository: apanisile/forge-siem-agent
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Resource limits per agent pod
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# Run on every node — include control-plane / master nodes by default
+tolerations:
+  - operator: Exists
+
+# Node selector (empty = all nodes)
+nodeSelector: {}
+
+# Extra labels applied to agent pods
+podLabels: {}
+
+# Extra env vars injected into the agent container
+extraEnv: []
+# Example:
+# extraEnv:
+#   - name: LOG_LEVEL
+#     value: debug
+
+# Host path mounts — agent needs access to system logs and /proc
+hostPaths:
+  varLog:
+    enabled: true
+    hostPath: /var/log
+  proc:
+    enabled: true
+    hostPath: /proc
+  # Optional: mount the Docker / containerd socket for container log enrichment
+  containerSocket:
+    enabled: false
+    hostPath: /var/run/containerd/containerd.sock
+
+# RBAC — ServiceAccount + ClusterRole for Kubernetes metadata (pod labels,
+# namespace, owner references attached to events)
+rbac:
+  create: true
+
+# Priority class for the DaemonSet pods
+priorityClassName: ""
+
+# Update strategy
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
