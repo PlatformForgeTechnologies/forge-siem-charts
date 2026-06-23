@@ -58,7 +58,7 @@ Deploys the full Forge SIEM data plane into your own Kubernetes cluster. Your ra
 - A relay API key from the Forge admin portal (Tenants → \[your tenant\] → Data Plane → Connect)
 
 ```bash
-helm install forge-data-plane forge-siem/forge-siem-byoc \
+helm install forge-data-plane forge-siem/forge-siem-data-plane \
   --namespace forge-byoc --create-namespace \
   --set forge.tenantID=<your-tenant-id> \
   --set forge.relayAPIKey=<fdp_key-from-portal> \

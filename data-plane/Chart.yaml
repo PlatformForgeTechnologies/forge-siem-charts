@@ -1,5 +1,5 @@
 apiVersion: v2
-name: forge-siem-byoc
+name: forge-siem-data-plane
 description: Forge SIEM BYOC data plane — runs in the customer's cluster and bridges to the Forge SaaS control plane.
 type: application
 version: 0.1.0
