@@ -22,7 +22,7 @@ enrollment:
 image:
   repository: apanisile/forge-siem-agent
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 # Resource limits per agent pod
 resources:

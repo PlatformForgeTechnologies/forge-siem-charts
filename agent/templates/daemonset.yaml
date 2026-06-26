@@ -80,8 +80,6 @@ spec:
             - name: container-socket
               mountPath: /run/containerd/containerd.sock
             {{- end }}
-            # Agent certificate store — persisted so the agent survives pod restarts
-            # without re-enrolling on every node restart.
             - name: agent-data
               mountPath: /var/lib/forge-siem-agent
       volumes:
@@ -103,7 +101,7 @@ spec:
             path: {{ .Values.hostPaths.containerSocket.hostPath }}
             type: Socket
         {{- end }}
-        # emptyDir per-node — agent certs survive pod restart on the same node
-        # but not node replacement (agent re-enrolls automatically on new nodes)
         - name: agent-data
-          emptyDir: {}
+          hostPath:
+            path: /var/lib/forge-siem-agent
+            type: DirectoryOrCreate
