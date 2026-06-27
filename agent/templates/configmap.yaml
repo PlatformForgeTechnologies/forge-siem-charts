@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "agent.fullname" . }}-config
+  labels:
+    {{- include "agent.labels" . | nindent 4 }}
+data:
+  agent.yaml: |
+    state:
+      path: /var/lib/forge-siem-agent/state/agent.json
+
+    server:
+      host: {{ .Values.enrollment.ingestHost }}
+      port: {{ .Values.enrollment.ingestPort }}
+      ca_cert: /var/lib/forge-siem-agent/tls/ca.crt
+      client_cert: /var/lib/forge-siem-agent/tls/agent.crt
+      client_key: /var/lib/forge-siem-agent/tls/agent.key
+
+    enrollment:
+      url: {{ .Values.enrollment.apiURL }}
+      token: ${ENROLL_TOKEN}
+      cert_path: /var/lib/forge-siem-agent/tls/agent.crt
+      key_path: /var/lib/forge-siem-agent/tls/agent.key
+      ca_path: /var/lib/forge-siem-agent/tls/ca.crt
+      {{- if .Values.enrollment.groups }}
+      groups:
+        {{- toYaml .Values.enrollment.groups | nindent 8 }}
+      {{- end }}
+
+    log_collection:
+      paths:
+        - /host/var/log/**/*.log
+        - /host/var/log/syslog
+        - /host/var/log/auth.log
+        - /host/var/log/kern.log
+        - /host/var/log/messages
+      outputs:
+        siem:
+          enabled: true
+
+    process_monitor:
+      enabled: true
+      interval: 10s
+
+    inventory:
+      enabled: true
+      interval: 1h

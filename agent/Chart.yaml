@@ -2,5 +2,5 @@ apiVersion: v2
 name: forge-siem-agent
 description: Forge SIEM agent DaemonSet — deploys the agent on every node to collect logs, monitor file integrity, and track process activity.
 type: application
-version: 0.2.0
+version: 0.3.0
 appVersion: "0.4.0"

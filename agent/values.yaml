@@ -5,14 +5,14 @@
 # mTLS event shipping to the ingest endpoint.
 
 enrollment:
-  # Token from Forge dashboard → Agents → Enrollment Tokens → New Token
+  # Token from Forge dashboard → Settings → Enrollment Tokens → New Token
   token: ""
-  # Forge API endpoint (control plane)
+  # Forge API endpoint (control plane) — used for enrollment only
   apiURL: "https://api.platformforgegroup.com"
-  # Forge ingest endpoint (mTLS TCP)
-  ingestURL: "ingest.platformforgegroup.com:1514"
-  # Optional: tag agents into groups (e.g. cluster name, environment)
-  # agents in a group share rules and show together in the Agents page
+  # Forge ingest endpoint — host and port are set separately
+  ingestHost: "ingest.platformforgegroup.com"
+  ingestPort: 1514
+  # Optional: tag agents into groups (shown in the Agents page)
   groups: []
   # Example:
   # groups:
