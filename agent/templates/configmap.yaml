@@ -17,7 +17,7 @@ data:
       client_key: /var/lib/forge-siem-agent/tls/agent.key
 
     enrollment:
-      url: {{ .Values.enrollment.apiURL }}
+      url: {{ .Values.enrollment.apiURL | quote }}
       token: ${ENROLL_TOKEN}
       cert_path: /var/lib/forge-siem-agent/tls/agent.crt
       key_path: /var/lib/forge-siem-agent/tls/agent.key

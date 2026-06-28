@@ -26,6 +26,7 @@ Deploys the Forge SIEM agent on every node. Collects logs, monitors file integri
 helm install forge-agent forge-siem/forge-siem-agent \
   --namespace forge-siem-agent --create-namespace \
   --set enrollment.token=<your-token> \
+  --set enrollment.apiURL=http://api.example.com:8080 \
   --set enrollment.groups[0]=my-cluster
 ```
 
@@ -36,7 +37,7 @@ Agents appear in your dashboard at `app.platformforgegroup.com` within 30 second
 | Key | Default | Description |
 |---|---|---|
 | `enrollment.token` | `""` | Enrollment token from the Forge dashboard |
-| `enrollment.apiURL` | `https://api.platformforgegroup.com` | Forge API endpoint |
+| `enrollment.apiURL` | `""` | Forge API endpoint. Must include scheme, and include a port when your API is not on 443/80 |
 | `enrollment.ingestURL` | `ingest.platformforgegroup.com:1514` | Forge ingest endpoint (mTLS TCP) |
 | `enrollment.groups` | `[]` | Group tags — used for routing rules and filtering in the UI |
 | `image.tag` | `latest` | Pin to a specific release in production |
