@@ -6,6 +6,8 @@ metadata:
     {{- include "agent.labels" . | nindent 4 }}
 data:
   agent.yaml: |
+    tenant_id: {{ .Values.enrollment.tenantID | quote }}
+
     state:
       path: /var/lib/forge-siem-agent/state/agent.json
 

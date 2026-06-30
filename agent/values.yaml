@@ -9,6 +9,9 @@ enrollment:
   # Changing this value triggers an automatic DaemonSet rollout so agents
   # re-enroll with the new token without any manual intervention.
   token: ""
+  # Tenant ID from Forge dashboard → Settings → Tenant. Agents include this
+  # in every envelope so events land in the right tenant without enrollment.
+  tenantID: ""
   # Forge API endpoint (control plane) — used for enrollment only.
   # Must include scheme and port. HTTP only; TLS termination is not configured.
   apiURL: "http://api.platformforgegroup.com:8080"
