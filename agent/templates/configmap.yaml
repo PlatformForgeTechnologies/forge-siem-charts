@@ -42,6 +42,13 @@ data:
         siem:
           enabled: true
 
+    {{- if .Values.fim.enabled }}
+    fim:
+      paths:
+        {{- toYaml .Values.fim.paths | nindent 8 }}
+      schedule: {{ .Values.fim.schedule }}
+    {{- end }}
+
     process_monitor:
       enabled: true
       interval: 10s

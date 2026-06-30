@@ -76,6 +76,12 @@ spec:
               mountPath: /host/proc
               readOnly: true
             {{- end }}
+            {{- if .Values.hostPaths.hostRoot.enabled }}
+            - name: host-root
+              mountPath: /host/root
+              readOnly: true
+              mountPropagation: HostToContainer
+            {{- end }}
             {{- if .Values.hostPaths.containerSocket.enabled }}
             - name: container-socket
               mountPath: /run/containerd/containerd.sock
@@ -98,6 +104,12 @@ spec:
         - name: host-proc
           hostPath:
             path: {{ .Values.hostPaths.proc.hostPath }}
+            type: Directory
+        {{- end }}
+        {{- if .Values.hostPaths.hostRoot.enabled }}
+        - name: host-root
+          hostPath:
+            path: {{ .Values.hostPaths.hostRoot.hostPath }}
             type: Directory
         {{- end }}
         {{- if .Values.hostPaths.containerSocket.enabled }}

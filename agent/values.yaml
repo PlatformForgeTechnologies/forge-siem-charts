@@ -56,6 +56,18 @@ extraEnv: []
 #   - name: LOG_LEVEL
 #     value: debug
 
+# File Integrity Monitoring — polls watched paths and emits an event on any
+# hash, permission, uid, or gid change. schedule accepts a Go duration (e.g.
+# 5m, 30s) or "realtime" which maps to a 15-second poll.
+fim:
+  enabled: true
+  schedule: 5m
+  paths:
+    - /host/root/etc
+    - /host/root/usr/bin
+    - /host/root/usr/sbin
+    - /host/root/bin
+
 # Host path mounts — agent needs access to system logs and /proc
 hostPaths:
   varLog:
@@ -64,6 +76,10 @@ hostPaths:
   proc:
     enabled: true
     hostPath: /proc
+  # Required for FIM — mounts the node root filesystem read-only under /host/root
+  hostRoot:
+    enabled: true
+    hostPath: /
   # Optional: mount the Docker / containerd socket for container log enrichment
   containerSocket:
     enabled: false
