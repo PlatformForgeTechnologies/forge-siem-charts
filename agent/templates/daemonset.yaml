@@ -65,6 +65,9 @@ spec:
               mountPath: /host/var/log
               readOnly: true
             {{- end }}
+            - name: host-docker-logs
+              mountPath: /host/var/lib/docker/containers
+              readOnly: true
             {{- if .Values.hostPaths.proc.enabled }}
             - name: host-proc
               mountPath: /host/proc
@@ -84,6 +87,10 @@ spec:
             path: {{ .Values.hostPaths.varLog.hostPath }}
             type: Directory
         {{- end }}
+        - name: host-docker-logs
+          hostPath:
+            path: /var/lib/docker/containers
+            type: DirectoryOrCreate
         {{- if .Values.hostPaths.proc.enabled }}
         - name: host-proc
           hostPath:
