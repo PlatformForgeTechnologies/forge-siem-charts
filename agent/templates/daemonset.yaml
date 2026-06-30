@@ -19,6 +19,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        forge-siem.io/enrollment-rollout: {{ .Values.enrollment.rolloutNonce | quote }}
       labels:
         app.kubernetes.io/name: {{ include "agent.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}

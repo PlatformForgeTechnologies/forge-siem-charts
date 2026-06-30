@@ -7,6 +7,9 @@
 enrollment:
   # Token from Forge dashboard → Settings → Enrollment Tokens → New Token
   token: ""
+  # Bump this when the enrollment token changes so the DaemonSet rolls and the
+  # agent can detect the new token on startup.
+  rolloutNonce: ""
   # Forge API endpoint (control plane) — used for enrollment only.
   # Must include scheme and port. HTTP only; TLS termination is not configured.
   apiURL: "http://api.platformforgegroup.com:8080"
